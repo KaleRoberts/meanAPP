@@ -13,7 +13,7 @@
 	var app = angular.module('flapperNews', ['ui.router']);
 
 
-	app.factory('posts', [function(){
+	app.factory('postsA', [function(){
 		var o = {
 			posts: []
 		};
@@ -40,9 +40,9 @@
 		}
 	]);
 
-	app.factory('posts2', [
-		'posts',
-		function (posts) {
+	app.factory('posts2', [   // This is to illustrate dependency injection and how you can ask for dependencies, again posts2 is the just alias for this factory. Dependency injection for this factory is going to be posts2
+		'posts',		      // Asking for, "posts" factory here, the function takes posts as an argument and then just returns the posts factory.
+		function (posts) {	  // This factory is an just an example.
 			return posts;
 		}
 	]);
@@ -50,7 +50,7 @@
 	app.config([
 		'$stateProvider',		// I'm asking for $stateProvider REQUEST
 		'$urlRouterProvider',
-		function($stateProvider, $urlRouterProvider){		//  Here's where they are giving it to me  PROVIDE
+		function($stateProvider, $urlRouterProvider){		//  Here's where they are giving it to me PROVIDE
 
 			$stateProvider
 				.state('home', {
@@ -69,7 +69,7 @@
 
 	app.controller('MainCtrl', [
 		'$scope',
-		'posts2',
+		'postsA',
 		function($scope, posts){
 				$scope.test = 'Hello World!';
 				$scope.posts = posts.posts;
@@ -107,6 +107,7 @@
 			$scope.post = posts.posts[$stateParams.id];
 
 			// When refreshing if there isn't a post then you don't get a page
+			// TODO: Find out how to implement this later
 			// if($scope.post === undefined) {go to MainCtrl;}
 			$scope.addComment = function(){
 				if($scope.body === '') { return; }
@@ -123,5 +124,7 @@
 // So far I'm not able to access the comments view.
 // Looks like I have all the correct functionality built in but I'm not hitting the comments view for some reason
 // TODO: Figure that out dude!
+// I figured this out with Kevin's help. Was missing a / after post/{id}
 
 // Get the handle on Angular and the concepts and then move to making Unit Test on your code
+// This is further dow the line though
