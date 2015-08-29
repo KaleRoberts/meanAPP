@@ -94,29 +94,31 @@
 					$scope.title = '';
 					$scope.link = '';
 				};
-				$scope.incrementUpvotes = function(post){
-					post.upvotes += 1;
+				$scope.incrementUpvotes = function(posts){
+					posts.upvotes += 1;
 				};
 		}]);
 
 	app.controller('PostsCtrl', [
 		'$scope',
 		'$stateParams',
-		'posts',
+		'postsA',
 		function($scope, $stateParams, posts){
-			$scope.post = posts.posts[$stateParams.id];
-
+			$scope.post = posts.posts[$stateParams.id];		// $stateParams.id ties each comment to a post by {id}
 			// When refreshing if there isn't a post then you don't get a page
 			// TODO: Find out how to implement this later
 			// if($scope.post === undefined) {go to MainCtrl;}
 			$scope.addComment = function(){
-				if($scope.body === '') { return; }
+				if($scope.body === '' || !$scope.body) { return;}
 					$scope.post.comments.push({
 						body: $scope.body,
 						author: 'user',
 						upvotes: 0
 				});
 				$scope.body = '';
+			};
+			$scope.incrementUpvotes = function(comments){
+				comments.upvotes += 1;
 			};
 		}]);
 }());
