@@ -1,9 +1,31 @@
 var express = require('express');
 var router = express.Router();
+// So the route is a way for us to open up a way for the front-end client to interact with the backend.
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+var mongoose = require('mongoose');	// First, make sure mongoose is imported.
+var Post = mongoose.model('Post');	// Need to have a handle to the Post data model
+var Comment = mongoose.model('Comment'); // Same goes for Comment data model, need a handle.
+
+// This is the function that handles the request for posts, GET.
+router.get('/posts', function(req, res, next) {		// Using Express.js built-in get method to define the URL end-point for our posts.
+  Post.find(function(err,posts){					// Notice we're querying for Post(s) here with .find. Don't confuse with POST function.
+  	if(err) {return next(err); }
+
+  	res.json(posts);
+  });
+});
+
+// Here is where we're handling POST functionality
+router.post('/posts', function(req, req, next) {	// This is how you implement POST functionality with Mongoose
+	var post = new Post(req.body);	// Having Mongoose create a new object of Post before saving to the database.
+
+	post.save(function(err, post){	// Similar to insert, we are saving this to our database.
+		if(err) {return next(err); }
+
+		res.json(post);
+	});
 });
 
 module.exports = router;
+
+// TODO: Learn the difference between POST and PUT
