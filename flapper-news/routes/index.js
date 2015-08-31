@@ -1,10 +1,15 @@
 var express = require('express');
 var router = express.Router();
-// So the route is a way for us to open up a way for the front-end client to interact with the backend.
 
 var mongoose = require('mongoose');	// First, make sure mongoose is imported.
 var Post = mongoose.model('Post');	// Need to have a handle to the Post data model
 var Comment = mongoose.model('Comment'); // Same goes for Comment data model, need a handle.
+
+/* GET home page. */
+// Don't delete this Kale. You are dumb sometimes
+router.get('/', function(req, res, next) {
+  res.render('index', { title: 'Express' });
+});
 
 // This is the function that handles the request for posts, GET.
 router.get('/posts', function(req, res, next) {		// Using Express.js built-in get method to define the URL end-point for our posts.
@@ -25,6 +30,19 @@ router.post('/posts', function(req, req, next) {	// This is how you implement PO
 		res.json(post);
 	});
 });
+
+// // We're creating a route for pre-loading post object
+// router.param('post', function(req, res, next, id) {	
+// 	var query = Post.findById(id);
+
+// 	query.exec(function (err, post) {
+// 		if(err) { return next(err); }
+// 		if(!post) {return next(new Error('can\'t find post')); }
+
+// 		req.post = post;
+// 		return next();
+// 	});
+// });
 
 module.exports = router;
 
