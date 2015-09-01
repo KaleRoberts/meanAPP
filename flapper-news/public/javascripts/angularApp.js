@@ -5,7 +5,7 @@
 // Node is a runtime
 // Node is all server side, it is a server side technology
 
-/*KNR 08/29/2015 Newest revision. Testing commit and push to GitHub */
+/*KNR 08/31/2015 Newest revision. Testing commit and push to GitHub */
 
 
 (function () {
@@ -13,9 +13,15 @@
 	var app = angular.module('flapperNews', ['ui.router']);
 
 
-	app.factory('postsA', [function(){
+	app.factory('postsA', ['$http', function($http){
 		var o = {
-			posts: []
+			 posts: []
+		};
+		
+		o.getAll = function() {
+			return $http.get('/posts').success(function(data){
+				angular.copy(data, o.posts);
+			});
 		};
 		return o;
 	}]);
@@ -55,8 +61,13 @@
 			$stateProvider
 				.state('home', {
 					url: '/home',
-					templateUrl: '/home.html',
-					controller: 'MainCtrl'									//USE
+					templateUrl: '/home.html',				// USE
+					controller: 'MainCtrl',
+					resolve: {										// We're using the resolve property of uik-router to ensure that posts are loaded
+						postPromise: ['postsA', function(posts){		// Anytime the home state is entered we automatically query all posts from the backend before the state actually finishes loading.
+							return posts.getAll();
+						}]
+					}									
 				})															
 				.state ('posts', {
 					url: '/posts/{id}',
@@ -129,4 +140,4 @@
 // I figured this out with Kevin's help. Was missing a / after post/{id}
 
 // Get the handle on Angular and the concepts and then move to making Unit Test on your code
-// This is further dow the line though
+// This is further down the line though

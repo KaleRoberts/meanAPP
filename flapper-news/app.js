@@ -16,7 +16,6 @@ var app = express();
 var mongoose = require('mongoose');
 
 
-
 mongoose.connect('mongodb://localhost/news');
 
 // view engine setup
