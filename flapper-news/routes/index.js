@@ -80,7 +80,7 @@ router.post('/posts/:post/comments', function(req, res, next) {
 		req.post.save(function(err, post){
 			if(err){return next(err);}
 
-			res.json(comment);
+		res.json(comment);
 		});
 	});
 });
@@ -97,7 +97,7 @@ router.put('/posts/:posts/comments/:comment/upvote,', function(req, res, next) {
 router.param('comment', function(req, res, next, id) {
 	var query = Comment.findById(id);
 
-	query.exec(function (err, commetn) {
+	query.exec(function (err, comment) {
 		if(err) {return next(err); }
 		if(!comment) {return next(new Error('can\'t find comment')); }
 

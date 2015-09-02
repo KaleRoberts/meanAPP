@@ -13,22 +13,54 @@
 	var app = angular.module('flapperNews', ['ui.router']);
 
 
-	app.factory('postsA', ['$http', function($http){
+	app.factory('posts', ['$http', function($http){
 		var o = {
 			 posts: []
 		};
 		
 		o.getAll = function() {
-			return $http.get('/posts').success(function(data){
+			return $http.get('/posts').success(function(data){		// Query for all the posts from our server
 				angular.copy(data, o.posts);
 			});
 		};
+
+		o.create = function(post) {
+			return $http.post('/posts', post).success(function(data){	// Creates posts on the backend
+				o.posts.push(data);
+			});
+		};
+
+		o.upvote = function(post) {
+			return $http.put('/posts/' + post._id + '/upvote')			// Upvotes posts on the backend, persists votes
+			.success(function(data){
+				post.upvotes += 1;
+			});
+		};
+
+		// o.downvote = function(post) {								// Flesh this functionality out for downvotes. Because things need to be downvoted :)
+		// 	return $http.put('/posts/' + post._id + '/downvote')
+		// 	.success(function(data){
+		// 		post.upvotes -+ 1;
+		// 	});
+		// };
+
+		o.get = function(id) {
+			return $http.get('/posts/' + id).then(function(res){
+				return res.data;
+			});
+		};
+
+		o.addComment = function(id, comment) {
+			return $http.post('/posts/' + id + '/comments', comment);
+		};
+
 		return o;
 	}]);
 
+/*
 	app.factory('posts', [  // posts is the id of the compenent (dependency you can inject later), when you add the id of the compenent you use posts as the identifier
-		function () {
-			var b = {
+		function () {		// This is merely a test factory that can be injected.
+			var b = {		// This might be a good way to mock out the posts factory?
 				"posts": [
 					{
 						title: "This is the title",
@@ -52,6 +84,7 @@
 			return posts;
 		}
 	]);
+*/
 
 	app.config([
 		'$stateProvider',		// I'm asking for $stateProvider REQUEST
@@ -64,7 +97,7 @@
 					templateUrl: '/home.html',				// USE
 					controller: 'MainCtrl',
 					resolve: {										// We're using the resolve property of uik-router to ensure that posts are loaded
-						postPromise: ['postsA', function(posts){		// Anytime the home state is entered we automatically query all posts from the backend before the state actually finishes loading.
+						postPromise: ['posts', function(posts){		// Anytime the home state is entered we automatically query all posts from the backend before the state actually finishes loading.
 							return posts.getAll();
 						}]
 					}									
@@ -72,7 +105,12 @@
 				.state ('posts', {
 					url: '/posts/{id}',
 					templateUrl: '/posts.html',
-					controller: 'PostsCtrl'
+					controller: 'PostsCtrl',
+					resolve: {
+						post: ['$stateParams', 'posts', function($stateParams, posts) {
+							return posts.get($stateParams.id);
+						}]
+					}
 				});
 				
 			$urlRouterProvider.otherwise('home');
@@ -80,7 +118,7 @@
 
 	app.controller('MainCtrl', [
 		'$scope',
-		'postsA',
+		'posts',
 		function($scope, posts){
 				$scope.test = 'Hello World!';
 				$scope.posts = posts.posts;
@@ -93,40 +131,56 @@
 				// ];
 				$scope.addPost = function(){
 					if(!$scope.title || $scope.title === '') {return;}
-					$scope.posts.push({
+					posts.create({						// This is persistent data. We are creating posts on the backend now, this will save posts to the server.
 						title: $scope.title,
 						link: $scope.link,
-						upvotes: 0,
-						comments: [
-							{author: 'Kale', body: 'Cool post Kale!', upvotes: 10},
-							{author: 'James', body: 'Great idea but everything is wrong!', upvotes: 0}
-						]
 					});
+					// $scope.posts.push({				// This serves as a local array for posts, this is not persistent data
+					// 	title: $scope.title,
+					// 	link: $scope.link,
+					// 	upvotes: 0,
+					// 	comments: [
+					// 		{author: 'Kale', body: 'Cool post Kale!', upvotes: 10},
+					// 		{author: 'James', body: 'Great idea but everything is wrong!', upvotes: 0}
+					// 	]
+					// });
 					$scope.title = '';
 					$scope.link = '';
 				};
-				$scope.incrementUpvotes = function(posts){
-					posts.upvotes += 1;
+				$scope.incrementUpvotes = function(post){
+					posts.upvote(post);
+					// posts.upvotes += 1;
 				};
+				// $scope.decrementUpvotes = function(post){
+				// 	posts.downvote(post);
+				// };
 		}]);
 
 	app.controller('PostsCtrl', [
-		'$scope',
-		'$stateParams',
-		'postsA',
-		function($scope, $stateParams, posts){
-			$scope.post = posts.posts[$stateParams.id];		// $stateParams.id ties each comment to a post by {id}
+		'$scope',					// Don't ask me why this actually works. I thought I was supposed to have postsA in here since that's my factory with all of the working functions.
+		'posts',					// I know this is my factory, so it has to be part of the dependencies
+		'post',						// I guess post is filling in for $stateParams?
+		function($scope, posts, post){
+			$scope.post = post;
+			// $scope.post = posts.posts[$stateParams.id];		// $stateParams.id ties each comment to a post by {id}
+			
 			// When refreshing if there isn't a post then you don't get a page
 			// TODO: Find out how to implement this later
 			// if($scope.post === undefined) {go to MainCtrl;}
 			$scope.addComment = function(){
-				if($scope.body === '' || !$scope.body) { return;}
-					$scope.post.comments.push({
+				if($scope.body === '') { return; }
+					posts.addComment(post._id, {
 						body: $scope.body,
 						author: 'user',
-						upvotes: 0
-				});
-				$scope.body = '';
+					}).success(function(comment) {
+						$scope.post.comments.push(comment);
+					});
+					// $scope.post.comments.push({
+					// 	body: $scope.body,
+					// 	author: 'user',
+					// 	upvotes: 0
+					// });
+					$scope.body = '';
 			};
 			$scope.incrementUpvotes = function(comments){
 				comments.upvotes += 1;
