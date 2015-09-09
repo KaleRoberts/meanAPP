@@ -47,8 +47,12 @@ router.param('post', function(req, res, next, id) {
 	});
 });
 
-router.get('/posts/:post', function(req, res) {
-	res.json(req.post);
+router.get('/posts/:post', function(req, res) {			// Made modifications to the GET rout for posts so that comments are also retrieved
+	req.post.populate('comments', function(err,post) {
+		if(err) {return next(err); }
+
+		res.json(post);
+	});
 });
 
 router.put('/posts/:post/upvote', function(req, res, next) {
@@ -61,14 +65,8 @@ router.put('/posts/:post/upvote', function(req, res, next) {
 
 
 // Handling comments here
-router.get('/posts/:post', function(req, res, next) {
-	req.post.populate('comments', function(err, post){
-		if(err) {return next(err); }
-
-		res.json(post);
-	});
-});
-
+// Removed router.get that I thought I was supposed to use for comments, which didn't make sense anyways.
+// Comments are attached to a specific post, so the comments should be part of the GET request for a particular/unique post id
 router.post('/posts/:post/comments', function(req, res, next) {
 	var comment = new Comment(req.body);
 	comment.post = req.post;
@@ -101,7 +99,7 @@ router.param('comment', function(req, res, next, id) {
 		if(err) {return next(err); }
 		if(!comment) {return next(new Error('can\'t find comment')); }
 
-		req.comment = comment;
+		req.post.comment = comment;		// Need to have req.post.comment as it is the comment that belongs to a particular post.
 		return next();
 	});
 });
