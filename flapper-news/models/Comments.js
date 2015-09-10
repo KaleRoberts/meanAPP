@@ -7,4 +7,9 @@ var CommentSchema = new mongoose.Schema({
 	post: {type: mongoose.Schema.Types.ObjectId, ref: 'Post'}	// With Mongoose, this is how you go about creating relationsips between different data models
 });																// Use of the ObjectId type allows for this.
 																// The ObjectId is a 12 byte MongoDB ObjectId which is actually what is stored in the database.
-mongoose.model('Comment', CommentSchema);						// The ref property tesll Mongoose what type of object the ID references.
+CommentSchema.methods.upvote = function(cb) {						// The ref property tells Mongoose what type of object the ID references.
+	this.upvotes +=1;
+	this.save(cb);
+};
+																
+mongoose.model('Comment', CommentSchema);						

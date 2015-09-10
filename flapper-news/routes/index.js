@@ -84,13 +84,14 @@ router.post('/posts/:post/comments', function(req, res, next) {
 });
 
 
-router.put('/posts/:posts/comments/:comment/upvote,', function(req, res, next) {
-	req.post.comments.upvote(function(err, comments){
+router.put('/posts/:post/comments/:comment/upvote', function(req, res, next) {
+	req.post.comment.upvote(function(err, comment) {
 		if(err) {return next(err); }
 
-		res.json(comments);
+		res.json(comment);
 	});
 });
+
 
 router.param('comment', function(req, res, next, id) {
 	var query = Comment.findById(id);
