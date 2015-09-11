@@ -5,15 +5,12 @@
 // Node is a runtime
 // Node is all server side, it is a server side technology
 
-/*KNR 08/31/2015 Newest revision. Testing commit and push to GitHub */
-
-
 (function () {
 	"use strict";
 	var app = angular.module('flapperNews', ['ui.router']);
 
 
-	app.factory('posts', ['$http', function($http){
+	app.factory('posts', ['$http', 'auth', function($http, auth){
 		var o = {
 			 posts: []
 		};
@@ -25,14 +22,17 @@
 		};
 
 		o.create = function(post) {
-			return $http.post('/posts', post).success(function(data){	// Creates posts on the backend
+			return $http.post('/posts', post, {
+				headers: {Authorization: 'Bearer '+auth.getToken()}
+			}).success(function(data){	// Creates posts on the backend
 				o.posts.push(data);
 			});
 		};
 
 		o.upvote = function(post) {
-			return $http.put('/posts/' + post._id + '/upvote')			// Upvotes posts on the backend, persists votes
-			.success(function(data){
+			return $http.put('/posts/' + post._id + '/upvote', null, {
+				headers: {Authorization: 'Bearer '+auth.getToken()}
+			}).success(function(data){
 				post.upvotes += 1;
 			});
 		};
@@ -51,18 +51,74 @@
 		};
 
 		o.addComment = function(id, comment) {
-			return $http.post('/posts/' + id + '/comments', comment);
+			return $http.post('/posts/' + id + '/comments', comment, {
+				headers: {Authorization: 'Bearer '+auth.getToken()}
+			});
 		};
 
 		o.upvoteComment = function(post, comment) {
-  			return $http.put('/posts/' + post._id + '/comments/'+ comment._id + '/upvote')
+  			return $http.put('/posts/' + post._id + '/comments/'+ comment._id + '/upvote', null, {
+  				headers: {Authorization: 'Bearer '+auth.getToken()}
+  			})
    		 	.success(function(data){
       			comment.upvotes += 1;
     		});
 		};
 
 		return o;
+	}])
+
+	app.factory('auth', ['$http', '$window', function($http, $window){
+		var auth = {};
+
+		auth.saveToken = function(token){
+			$window.localStorage['flapper-news-token'] = token;
+		};
+
+		auth.getToken = function(){
+			return $window.localStorage['flapper-news-token'];
+		}
+
+		auth.isLoggedIn = function(){			
+			var token = auth.getToken();
+
+			if(token){														
+				var payload = JSON.parse($window.atob(token.split('.')[1])); // If a token exists, we'll need to check the payload to see if the token has expired
+
+				return payload.exp > Date.now() / 1000;
+			} else {
+				return false;												// Otherwise we assume the user has logged out
+			}
+		};
+
+		auth.currentUser = function(){
+			if(auth.isLoggedIn()){
+				var token = auth.getToken();
+				var payload = JSON.parse($window.atob(token.split('.')[1]));
+
+				return payload.username;
+			}
+		};
+
+		auth.register = function(user){
+			return $http.post('/register', user).success(function(data){
+				auth.saveToken(data.token);
+			});
+		};
+
+		auth.login = function(user){
+			return $http.post('/login', user).success(function(data){
+				auth.saveToken(data.token);
+			});
+		};
+
+		auth.logout = function(){
+			$window.localStorage.removeItem('flapper-news-token');
+		};
+
+		return auth;
 	}]);
+
 
 /*
 	app.factory('posts', [  // posts is the id of the compenent (dependency you can inject later), when you add the id of the compenent you use posts as the identifier
@@ -118,6 +174,26 @@
 							return posts.get($stateParams.id);
 						}]
 					}
+				})
+				.state('login', {
+					url: '/login',
+					templateUrl: '/login.html',
+					controller: 'AuthCtrl',
+					onEnter: ['$state', 'auth', function($state, auth){
+						if(auth.isLoggedIn()){
+							$state.go('home');
+						}
+					}]
+				})
+				.state('register', {
+					url: '/register',
+					templateUrl: '/register.html',
+					controller: 'AuthCtrl',
+					onEnter: ['$state', 'auth', function($state, auth){
+						if(auth.isLoggedIn()){
+							$state.go('home');
+						}
+					}]
 				});
 				
 			$urlRouterProvider.otherwise('home');
@@ -126,9 +202,11 @@
 	app.controller('MainCtrl', [
 		'$scope',
 		'posts',
+		'auth',
 		function($scope, posts){
 				$scope.test = 'Hello World!';
 				$scope.posts = posts.posts;
+				$scope.isLoggedIn = auth.isLoggedIn;
 				// [
 				// 	{title: 'post 1', upvotes: 5},
 				// 	{title: 'post 2', upvotes: 2},
@@ -167,8 +245,10 @@
 		'$scope',					// Don't ask me why this actually works. I thought I was supposed to have postsA in here since that's my factory with all of the working functions.
 		'posts',					// I know this is my factory, so it has to be part of the dependencies
 		'post',						// I guess post is filling in for $stateParams?
+		'auth',
 		function($scope, posts, post){
 			$scope.post = post;
+			$scope.isLoggedIn = auth.isLoggedIn;
 			// $scope.post = posts.posts[$stateParams.id];		// $stateParams.id ties each comment to a post by {id}
 			
 			// When refreshing if there isn't a post then you don't get a page
@@ -193,6 +273,41 @@
 				posts.upvoteComment(post, comment);
 			};
 		}]);
+		
+		app.controller('AuthCtrl', [
+			'$scope',
+			'$state',
+			'auth',								// Using the auth factory that we created to handle user authentication
+			function($scope, $state, auth){
+				$scope.user = {};
+
+				$scope.register = function(){
+					auth.register($scope.user).error(function(error){
+						$scope.error = error;
+					}).then(function(){
+						$state.go('home');
+					});
+				};
+
+				$scope.login = function(){
+					auth.login($scope.user).error(function(error){
+						$scope.error = error;
+					}).then(function(){
+						$state.go('home');
+					});
+				};
+
+			}]);
+
+		app.controller('NavCtrl', [
+			'$scope',
+			'auth', 							// Using the auth factory that we created to handle user authentication
+			function($scope, auth){
+				$scope.isLoggedIn = auth.isLoggedIn;
+				$scope.currentUser = auth.currentUser;
+				$scope.logout = auth.logout;
+			}]);
+	
 }());
 
 // So far I'm not able to access the comments view.
@@ -202,3 +317,4 @@
 
 // Get the handle on Angular and the concepts and then move to making Unit Test on your code
 // This is further down the line though
+// After I've finished working out user account functionality I will add in Unit Tests, Unit Tests really should be written first though as a best practice.
