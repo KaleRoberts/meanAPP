@@ -203,7 +203,7 @@
 		'$scope',
 		'posts',
 		'auth',
-		function($scope, posts){
+		function($scope, posts, auth){
 				$scope.test = 'Hello World!';
 				$scope.posts = posts.posts;
 				$scope.isLoggedIn = auth.isLoggedIn;
@@ -219,6 +219,7 @@
 					posts.create({						// This is persistent data. We are creating posts on the backend now, this will save posts to the server.
 						title: $scope.title,
 						link: $scope.link,
+						author: 'user',
 					});
 					// $scope.posts.push({				// This serves as a local array for posts, this is not persistent data
 					// 	title: $scope.title,
@@ -246,7 +247,7 @@
 		'posts',					// I know this is my factory, so it has to be part of the dependencies
 		'post',						// I guess post is filling in for $stateParams?
 		'auth',
-		function($scope, posts, post){
+		function($scope, posts, post, auth){
 			$scope.post = post;
 			$scope.isLoggedIn = auth.isLoggedIn;
 			// $scope.post = posts.posts[$stateParams.id];		// $stateParams.id ties each comment to a post by {id}
