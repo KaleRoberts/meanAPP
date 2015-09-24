@@ -9,12 +9,17 @@ There are a few dependencies which I need to add to the package.json which now i
  express-jwt
  
 So a few npm commands to run from within the flapper-news directory for implementing User support - 
+ 
  npm install jsonwebtoken --save
+ 
  npm install passport passport-local --save
+ 
  npm install express-jwt --save
  
   ** Don't forget to require jsonwebtoken in the User model
+  
   var jwt = require('jsonwebtoken');
   
   ** Don't forget passport is required in app.js
+  
   var passport = require('passport');
