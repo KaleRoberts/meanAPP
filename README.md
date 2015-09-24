@@ -16,10 +16,6 @@ So a few npm commands to run from within the flapper-news directory for implemen
  
  npm install express-jwt --save
  
-  ** Don't forget to require jsonwebtoken in the User model
+  ** Don't forget to require jsonwebtoken in the User model:  var jwt = require('jsonwebtoken');
   
-  var jwt = require('jsonwebtoken');
-  
-  ** Don't forget passport is required in app.js
-  
-  var passport = require('passport');
+  ** Don't forget passport is required in app.js: var passport = require('passport');
